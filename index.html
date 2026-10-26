@@ -133,18 +133,18 @@
   .links { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 20px; margin-top: 8px; }
   .links a { color: var(--muted); font-weight: 800; }
   .links a:hover { color: var(--gold); }
-  /* Deck : à l'accueil, on clique une carte pour la sortir du tirage. */
-  .stage.rest .card { cursor: pointer; }
-  .stage.rest .card:not(.off):hover .face { box-shadow: 0 0 0 2px var(--gold), 0 10px 28px #0009; }
-  .card:focus-visible { outline: 3px solid #fff; outline-offset: 4px; border-radius: 8px; }
-  .card.off { opacity: .3; filter: grayscale(1); }
+  /* Deck choisi au-dessus de la table ; les cartes hors du deck sont masquées. */
   .card.gone { opacity: 0; pointer-events: none; }
-  .deckbar { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px 16px; font-weight: 800; }
-  .link {
-    background: none; border: 0; padding: 4px 2px; cursor: pointer;
-    font: inherit; color: var(--gold); text-decoration: underline; text-underline-offset: 3px;
+  .deckbar { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px 14px; font-weight: 800; }
+  .deckbar select {
+    font: inherit; color: var(--ink); background: var(--panel);
+    border: 1.5px solid var(--gold); border-radius: 999px;
+    padding: 8px 14px; max-width: 100%; cursor: pointer;
   }
-  .link:focus-visible { outline: 3px solid #fff; outline-offset: 2px; border-radius: 4px; }
+  .deckbar select:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+  .deckbar select:disabled { opacity: .6; cursor: default; }
+  #count { color: var(--muted); }
+  .deckbar a { color: var(--gold); }
 </style>
 </head>
 <body>
@@ -153,13 +153,14 @@
 <main>
   <h1><a id="home" href="./">BrandQuest Cards</a></h1>
   <p class="sub"><b>Bonus</b> <i>Malus</i></p>
+  <div class="deckbar" id="deckbar" hidden>
+    <label for="deckSel">Deck</label>
+    <select id="deckSel"></select>
+    <span id="count"></span>
+    <a href="decks.html">Gérer les decks</a>
+  </div>
   <div class="stage" id="stage"></div>
   <p class="status" id="status" aria-live="polite">Chargement des cartes…</p>
-  <div class="deckbar" id="deckbar" hidden>
-    <span id="count"></span>
-    <button class="link" id="pickAll" type="button">Tout prendre</button>
-    <button class="link" id="pickNone" type="button">Tout retirer</button>
-  </div>
   <div class="actions">
     <button class="btn" id="go" type="button" disabled>Lancer le tirage</button>
     <button class="ghost" id="all" type="button" hidden>Voir toutes les cartes</button>
@@ -171,16 +172,13 @@
   </nav>
 </main>
 
+<script src="commun.js"></script>
 <script>
-  // Les cartes = les images du dossier "cartes" du dépôt GitHub ; leur sous-dossier (bonus/ ou malus/) donne leur type.
-  const REPO = 'Thorn96/Cartes-Lucas', BRANCH = 'main';
-  const IMG = /\.(png|jpe?g|webp|gif)$/i;
   const SLOT = 1.15; // écart entre cartes, en largeurs de carte
   const ROW = 1.1;   // écart entre rangées, en hauteurs de carte
-  const KEY = 'bq-cartes-retirees'; // le deck est gardé dans ce navigateur
 
   const $ = id => document.getElementById(id);
-  const stage = $('stage'), statusEl = $('status'), btn = $('go'), allBtn = $('all'), deckbar = $('deckbar');
+  const stage = $('stage'), statusEl = $('status'), btn = $('go'), allBtn = $('all'), deckSel = $('deckSel');
   const speed = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0.3 : 1;
   const wait = ms => new Promise(r => setTimeout(r, ms * speed));
   const rand = n => crypto.getRandomValues(new Uint32Array(1))[0] % n;
@@ -188,11 +186,16 @@
   for (const t of ['bonus', 'malus'])
     $('add' + t[0].toUpperCase() + t.slice(1)).href = `https://github.com/${REPO}/upload/${BRANCH}/cartes/${t}`;
 
-  // all = toutes les cartes du dossier ; cards = celles sur la table pendant un tirage.
-  let all = [], cards = [], z = 1, busy = false, atRest = false, cols = 1, rows = 1;
-  const out = new Set((() => { try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch { return []; } })());
-  const save = () => { try { localStorage.setItem(KEY, JSON.stringify([...out])); } catch {} };
-  const deck = () => all.filter(c => !out.has(c.dataset.key));
+  // all = toutes les cartes du dossier ; cards = celles du deck choisi, sur la table.
+  let all = [], cards = [], z = 1, busy = false, cols = 1, rows = 1;
+  let state = loadDecks();
+  const currentDeck = () => state.decks.find(d => d.id === state.current);
+  function deck() {
+    const d = currentDeck();
+    if (!d) return all;
+    const keys = new Set(d.cards);
+    return all.filter(c => keys.has(c.dataset.key));
+  }
 
   function place(el, { x = 0, y = 0, r = 0, s = 1, t = 600 } = {}) {
     el.style.setProperty('--x', x);
@@ -228,11 +231,6 @@
       const el = document.createElement('div');
       el.dataset.key = card.key;
       el.dataset.type = card.type;
-      el.setAttribute('role', 'button');
-      el.addEventListener('click', () => toggle(el));
-      el.addEventListener('keydown', e => {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(el); }
-      });
       const flip = document.createElement('div');
       flip.className = 'flip';
       flip.append(img('face back', 'verso.webp', 'Verso BrandQuest'), img('face front', card.src, card.name));
@@ -240,66 +238,54 @@
       return el;
     });
     stage.replaceChildren(...all);
+    fillPicker();
     showAll(0);
   }
 
-  // Accueil : toutes les cartes face visible ; celles hors du deck sont grisées.
+  function fillPicker() {
+    if (!currentDeck()) state.current = '';
+    deckSel.replaceChildren(new Option('Toutes les cartes', ''),
+      ...state.decks.map(d => new Option(d.name || 'Sans nom', d.id)));
+    deckSel.value = state.current;
+  }
+  deckSel.addEventListener('change', () => {
+    state.current = deckSel.value;
+    saveDecks(state);
+    showAll();
+  });
+  // Un deck modifié dans un autre onglet (page « Mes decks ») est repris ici.
+  addEventListener('storage', e => {
+    if (e.key !== DECKS_KEY || busy) return;
+    state = loadDecks();
+    fillPicker();
+    showAll();
+  });
+
+  // Accueil : les cartes du deck choisi, face visible.
   function showAll(t = 500) {
     if (busy) return;
-    cards = all;
-    layout(all.length);
-    all.forEach((c, k) => {
-      c.className = 'card up' + (out.has(c.dataset.key) ? ' off' : '');
-      c.style.zIndex = k;
-      c.tabIndex = 0;
-      c.setAttribute('aria-pressed', !out.has(c.dataset.key));
-      toSlot(c, k, t);
-    });
-    atRest = true;
-    stage.classList.add('rest');
+    cards = deck();
+    layout(cards.length);
+    all.forEach(c => { c.className = cards.includes(c) ? 'card up' : 'card gone'; });
+    cards.forEach((c, k) => { c.style.zIndex = k; toSlot(c, k, t); });
     btn.textContent = 'Lancer le tirage';
+    btn.disabled = cards.length < 2;
     allBtn.hidden = true;
-    refresh();
+    $('deckbar').hidden = !all.length;
+    deckSel.disabled = false;
+    $('count').textContent = `${cards.length} carte${cards.length > 1 ? 's' : ''} · ${typeSummary(cards.map(c => c.dataset.type))}`;
+    statusEl.textContent = all.length === 0 ? 'Aucune carte pour l’instant. Ajoute un bonus ou un malus en bas de la page.'
+      : all.length === 1 ? 'Ajoute au moins une autre carte pour lancer un tirage.'
+      : cards.length < 2 ? 'Ce deck a moins de 2 cartes. Complète-le dans « Gérer les decks ».'
+      : 'Les cartes possibles.';
   }
-
-  function refresh() {
-    const inDeck = deck(), d = inDeck.length, n = all.length;
-    const of = t => inDeck.filter(c => c.dataset.type === t).length;
-    const other = d - of('bonus') - of('malus');
-    btn.disabled = d < 2;
-    deckbar.hidden = n < 2;
-    $('count').textContent = `Deck : ${d} / ${n} cartes · ${of('bonus')} bonus · ${of('malus')} malus`
-      + (other ? ` · ${other} sans type` : '');
-    statusEl.textContent = n === 0 ? 'Aucune carte pour l’instant. Ajoute des images dans le dossier « cartes ».'
-      : n === 1 ? 'Ajoute au moins une autre carte pour lancer un tirage.'
-      : d < 2 ? 'Garde au moins 2 cartes dans le deck pour lancer un tirage.'
-      : 'Clique sur une carte pour la retirer du deck ou l’y remettre.';
-  }
-
-  function setOut(el, off) {
-    off ? out.add(el.dataset.key) : out.delete(el.dataset.key);
-    el.classList.toggle('off', off);
-    el.setAttribute('aria-pressed', !off);
-  }
-  function toggle(el) {
-    if (!atRest) return;
-    setOut(el, !out.has(el.dataset.key));
-    save(); refresh();
-  }
-  $('pickAll').addEventListener('click', () => { if (atRest) { all.forEach(c => setOut(c, false)); save(); refresh(); } });
-  $('pickNone').addEventListener('click', () => { if (atRest) { all.forEach(c => setOut(c, true)); save(); refresh(); } });
 
   async function draw() {
-    const d = deck();
-    if (d.length < 2) return;
-    busy = true; atRest = false;
-    btn.disabled = true; allBtn.hidden = true; deckbar.hidden = true;
-    stage.classList.remove('rest');
-    all.forEach(c => { c.tabIndex = -1; c.className = d.includes(c) ? 'card up' : 'card gone'; });
-    cards = d;
-    layout(d.length);
-    d.forEach((c, k) => { c.style.zIndex = k; toSlot(c, k, 500); });
-    statusEl.textContent = d.length === all.length ? 'Les cartes en jeu.' : `Les ${d.length} cartes du deck.`;
+    if (cards.length < 2) return;
+    busy = true;
+    btn.disabled = true; allBtn.hidden = true; deckSel.disabled = true;
+    cards.forEach((c, k) => { c.className = 'card up'; c.style.zIndex = k; toSlot(c, k, 500); });
+    statusEl.textContent = 'Les cartes en jeu.';
     await wait(1200);
 
     for (const c of cards) { c.classList.remove('up'); await wait(Math.min(160, 1600 / cards.length)); }
@@ -354,27 +340,16 @@
     btn.textContent = 'Nouveau tirage';
     btn.disabled = false;
     allBtn.hidden = false;
+    deckSel.disabled = false;
     busy = false;
   }
   btn.addEventListener('click', draw);
   allBtn.addEventListener('click', () => showAll());
   $('home').addEventListener('click', e => { e.preventDefault(); showAll(); });
-  addEventListener('resize', () => { if (atRest) showAll(0); }); // la grille suit la largeur de l'écran
+  addEventListener('resize', () => { if (!busy && allBtn.hidden) showAll(0); }); // la grille suit la largeur de l'écran
 
-  // ponytail: API GitHub sans jeton = 60 lectures/heure par connexion, largement assez pour un jeu entre amis.
-  fetch(`https://api.github.com/repos/${REPO}/git/trees/${BRANCH}?recursive=1`, { cache: 'no-store' })
-    .then(r => r.ok ? r.json() : Promise.reject(r.status))
-    .then(({ tree }) => buildTable(tree
-      .filter(f => f.type === 'blob' && f.path.startsWith('cartes/') && IMG.test(f.path))
-      .map(f => {
-        const parts = f.path.split('/'), type = parts.length > 2 ? parts[1].toLowerCase() : '';
-        return {
-          key: f.path,
-          type: type === 'bonus' || type === 'malus' ? type : '',
-          name: parts.at(-1).replace(IMG, ''),
-          src: `https://raw.githubusercontent.com/${REPO}/${BRANCH}/${f.path.split('/').map(encodeURIComponent).join('/')}`,
-        };
-      })))
+  loadCards()
+    .then(buildTable)
     .catch(() => { statusEl.textContent = 'Impossible de charger les cartes. Recharge la page dans quelques minutes.'; });
 </script>
 </body>

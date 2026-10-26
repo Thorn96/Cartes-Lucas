@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mes decks</title>
+<link rel="icon" href="verso.webp">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@600;800&display=swap">
+<style>
+  /* Liste des decks en pastilles, puis l'éditeur du deck ouvert : cartes groupées par type, à cocher. */
+  :root {
+    --night: #0b1033;
+    --nebula: #2a2f86;
+    --violet: #6b4bb8;
+    --gold: #f3c21b;
+    --gold-deep: #c98d0a;
+    --ink: #eef0ff;
+    --muted: #a9b0e6;
+    --panel: #141a4bcc;
+    --danger: #ff6b6b;
+    --display: "Lilita One", "Arial Rounded MT Bold", system-ui, sans-serif;
+    --body: "Nunito", system-ui, sans-serif;
+    color-scheme: dark;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background:
+      radial-gradient(60% 40% at 50% 0%, var(--nebula), transparent 70%),
+      var(--night);
+    background-attachment: fixed;
+    color: var(--ink);
+    font: 600 16px/1.5 var(--body);
+  }
+  [hidden] { display: none !important; }
+  main {
+    max-width: 960px; margin: 0 auto;
+    padding-block: 32px 64px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    display: flex; flex-direction: column; gap: 20px;
+  }
+  .back { color: var(--muted); font-weight: 800; text-decoration: none; }
+  .back:hover { color: var(--gold); }
+  h1 {
+    margin: 0;
+    font: 400 clamp(2rem, 7vw, 3rem)/1.05 var(--display);
+    color: var(--gold);
+    text-shadow: 0 3px 0 var(--violet);
+  }
+  h2 { margin: 8px 0 10px; font: 400 1.3rem/1.2 var(--display); letter-spacing: .02em; }
+  .lead { margin: 0; color: var(--muted); max-width: 62ch; }
+  button { font: inherit; cursor: pointer; }
+  button:disabled { cursor: default; }
+  button:focus-visible, input:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+
+  .decklist { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    color: var(--ink); background: var(--panel);
+    border: 1.5px solid var(--muted); border-radius: 999px;
+    padding: 8px 16px; font-weight: 800;
+  }
+  .chip:hover { border-color: var(--gold); }
+  .chip[aria-pressed="true"] { background: var(--gold); border-color: var(--gold); color: var(--night); }
+  .chip.new { border-style: dashed; color: var(--gold); background: transparent; }
+
+  .editor {
+    background: var(--panel);
+    border: 2px solid var(--gold); border-radius: 18px;
+    padding: 20px;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .field { display: flex; flex-direction: column; gap: 4px; font-weight: 800; color: var(--muted); }
+  #name {
+    font: 400 1.5rem/1.2 var(--display); color: var(--ink);
+    background: var(--night); border: 1.5px solid var(--muted); border-radius: 10px;
+    padding: 8px 12px; width: 100%; max-width: 420px; min-width: 0;
+  }
+  .summary { margin: 0; font-weight: 800; font-size: 1.1rem; }
+  .row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  .ghost {
+    color: var(--ink); background: transparent;
+    border: 1.5px solid var(--muted); border-radius: 999px;
+    padding: 8px 16px; font-weight: 800;
+  }
+  .ghost:hover { border-color: var(--gold); color: var(--gold); }
+  .ghost.danger, .ghost.danger:hover { border-color: var(--danger); color: var(--danger); }
+  .btn {
+    font: 400 1.1rem/1 var(--display); letter-spacing: .04em;
+    color: var(--night);
+    background: linear-gradient(var(--gold), var(--gold-deep));
+    border: 0; border-radius: 999px;
+    padding: 12px 24px;
+    box-shadow: 0 4px 0 #7a5306;
+    margin-left: auto;
+  }
+  .btn:disabled { filter: grayscale(.6) brightness(.7); }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 14px; }
+  .pick { position: relative; display: flex; flex-direction: column; gap: 6px; cursor: pointer; text-align: center; font-size: .9rem; min-width: 0; }
+  .pick input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .pick img {
+    width: 100%; aspect-ratio: 827 / 1417; object-fit: cover;
+    border-radius: 8px; border: 3px solid transparent;
+    background: var(--nebula);
+    opacity: .4; filter: grayscale(.8);
+    transition: opacity .2s, filter .2s, border-color .2s;
+  }
+  .pick input:checked ~ img { opacity: 1; filter: none; border-color: var(--gold); }
+  .pick input:focus-visible ~ img { outline: 3px solid #fff; outline-offset: 2px; }
+  .pick .tick {
+    position: absolute; top: 8px; right: 8px;
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--night); border: 2px solid var(--muted);
+    display: grid; place-items: center;
+    color: var(--night); font-weight: 800; line-height: 1;
+  }
+  .pick input:checked ~ .tick { background: var(--gold); border-color: var(--gold); }
+  .pick input:checked ~ .tick::after { content: "✓"; }
+  .pick span.name { overflow-wrap: anywhere; }
+
+  .status { margin: 0; color: var(--muted); }
+  .status:empty { display: none; }
+  .note { margin: 0; color: var(--muted); font-size: .9rem; }
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="./">← Retour au tirage</a>
+  <h1>Mes decks</h1>
+  <p class="lead">Un deck est une sélection de cartes. Choisis ensuite le deck au-dessus de la table du tirage : seules ses cartes seront mélangées et tirées.</p>
+
+  <div class="decklist" id="decklist"></div>
+  <p class="status" id="status" aria-live="polite">Chargement des cartes…</p>
+
+  <section class="editor" id="editor" hidden>
+    <label class="field" for="name">Nom du deck
+      <input id="name" type="text" maxlength="40" autocomplete="off">
+    </label>
+    <p class="summary" id="summary" aria-live="polite"></p>
+    <div class="row">
+      <button class="ghost" id="checkAll" type="button">Tout cocher</button>
+      <button class="ghost" id="checkNone" type="button">Tout décocher</button>
+      <button class="ghost danger" id="del" type="button">Supprimer ce deck</button>
+      <button class="btn" id="use" type="button">Tirer avec ce deck</button>
+    </div>
+    <div id="groups"></div>
+  </section>
+
+  <p class="note">Les decks sont enregistrés dans ce navigateur, sur cet appareil. Chaque changement est enregistré tout de suite.</p>
+</main>
+
+<script src="commun.js"></script>
+<script>
+  const $ = id => document.getElementById(id);
+  const state = loadDecks();
+  let cards = [], editing = null;
+
+  const persist = () => {
+    if (!saveDecks(state)) $('status').textContent = 'Impossible d’enregistrer : ce navigateur bloque le stockage (navigation privée ?).';
+  };
+
+  const newBtn = document.createElement('button');
+  newBtn.type = 'button'; newBtn.className = 'chip new'; newBtn.textContent = '+ Nouveau deck';
+  newBtn.addEventListener('click', () => {
+    let n = state.decks.length + 1;
+    while (state.decks.some(d => d.name === `Deck ${n}`)) n++;
+    const d = { id: Date.now().toString(36), name: `Deck ${n}`, cards: [] };
+    state.decks.push(d);
+    persist();
+    open(d);
+    $('name').focus(); $('name').select();
+  });
+
+  function renderList() {
+    $('decklist').replaceChildren(...state.decks.map(d => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'chip';
+      b.textContent = d.name || 'Sans nom';
+      b.setAttribute('aria-pressed', d === editing);
+      b.addEventListener('click', () => open(d));
+      return b;
+    }), newBtn);
+  }
+
+  function open(d) {
+    editing = d;
+    $('editor').hidden = !d;
+    $('status').textContent = d ? '' : 'Aucun deck pour l’instant. Clique sur « + Nouveau deck » pour en créer un.';
+    renderList();
+    if (!d) return;
+    $('name').value = d.name;
+    disarm();
+    renderGroups();
+    summarize();
+  }
+
+  function renderGroups() {
+    const chosen = new Set(editing.cards);
+    $('groups').replaceChildren(...[['bonus', 'Bonus'], ['malus', 'Malus'], ['', 'Sans type']]
+      .map(([type, label]) => [label, cards.filter(c => c.type === type)])
+      .filter(([, list]) => list.length)
+      .map(([label, list]) => {
+        const sec = document.createElement('section');
+        const h = document.createElement('h2');
+        h.textContent = `${label} (${list.length})`;
+        const grid = document.createElement('div');
+        grid.className = 'grid';
+        grid.append(...list.map(c => {
+          const lab = document.createElement('label');
+          lab.className = 'pick';
+          const cb = document.createElement('input');
+          cb.type = 'checkbox'; cb.checked = chosen.has(c.key);
+          cb.addEventListener('change', () => toggle(c.key, cb.checked));
+          const im = document.createElement('img');
+          im.src = c.src; im.alt = ''; im.loading = 'lazy';
+          const tick = document.createElement('span');
+          tick.className = 'tick';
+          const name = document.createElement('span');
+          name.className = 'name'; name.textContent = c.name;
+          lab.append(cb, im, tick, name);
+          return lab;
+        }));
+        sec.append(h, grid);
+        return sec;
+      }));
+  }
+
+  function toggle(key, on) {
+    const s = new Set(editing.cards);
+    on ? s.add(key) : s.delete(key);
+    editing.cards = [...s];
+    persist();
+    summarize();
+  }
+
+  function summarize() {
+    const set = new Set(editing.cards);
+    const inDeck = cards.filter(c => set.has(c.key));
+    $('summary').textContent = `${inDeck.length} / ${cards.length} cartes · ${typeSummary(inDeck.map(c => c.type))}`;
+    $('use').disabled = inDeck.length < 2;
+    $('use').title = inDeck.length < 2 ? 'Il faut au moins 2 cartes dans le deck' : '';
+  }
+
+  $('name').addEventListener('input', () => {
+    editing.name = $('name').value.trim();
+    persist();
+    renderList();
+  });
+  $('checkAll').addEventListener('click', () => { editing.cards = cards.map(c => c.key); persist(); renderGroups(); summarize(); });
+  $('checkNone').addEventListener('click', () => { editing.cards = []; persist(); renderGroups(); summarize(); });
+
+  const del = $('del');
+  function disarm() { delete del.dataset.armed; del.textContent = 'Supprimer ce deck'; }
+  del.addEventListener('click', () => {
+    if (!del.dataset.armed) {
+      del.dataset.armed = '1'; del.textContent = 'Confirmer la suppression';
+      setTimeout(disarm, 3000);
+      return;
+    }
+    state.decks = state.decks.filter(d => d !== editing);
+    if (state.current === editing.id) state.current = '';
+    persist();
+    open(state.decks[0] || null);
+  });
+
+  $('use').addEventListener('click', () => {
+    state.current = editing.id;
+    persist();
+    location.href = './';
+  });
+
+  loadCards()
+    .then(list => {
+      cards = list;
+      open(state.decks.find(d => d.id === state.current) || state.decks[0] || null);
+    })
+    .catch(() => { $('status').textContent = 'Impossible de charger les cartes. Recharge la page dans quelques minutes.'; });
+</script>
+</body>
+</html>
