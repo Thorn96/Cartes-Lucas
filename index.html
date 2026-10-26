@@ -127,6 +127,18 @@
     padding: 8px 16px; font-weight: 800; text-decoration: none;
   }
   .add:hover { border-color: var(--gold); color: var(--gold); }
+  h1 a { color: inherit; text-decoration: none; }
+  h1 a:focus-visible { outline: 3px solid #fff; outline-offset: 4px; border-radius: 8px; }
+  .actions { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 12px; }
+  .ghost {
+    font: 400 1.05rem/1 var(--display); letter-spacing: .04em;
+    color: var(--ink); background: var(--panel);
+    border: 1.5px solid var(--muted); border-radius: 999px;
+    padding: 12px 22px; cursor: pointer;
+  }
+  .ghost:hover { border-color: var(--gold); color: var(--gold); }
+  .ghost:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+  [hidden] { display: none !important; }
   .help { margin-top: 8px; color: var(--muted); font-weight: 800; }
   .help:hover { color: var(--gold); }
 </style>
@@ -136,11 +148,14 @@
 <a class="add" id="add" href="#" target="_blank" rel="noopener">Ajouter des cartes</a>
 
 <main>
-  <h1>BrandQuest Cards</h1>
+  <h1><a id="home" href="./">BrandQuest Cards</a></h1>
   <p class="sub"><b>Bonus</b> <i>Malus</i></p>
   <div class="stage" id="stage"></div>
   <p class="status" id="status" aria-live="polite">Chargement des cartes…</p>
-  <button class="btn" id="go" type="button" disabled>Lancer le tirage</button>
+  <div class="actions">
+    <button class="btn" id="go" type="button" disabled>Lancer le tirage</button>
+    <button class="ghost" id="all" type="button" hidden>Voir toutes les cartes</button>
+  </div>
   <a class="help" href="tuto.html">Comment ajouter des cartes ?</a>
 </main>
 
@@ -158,7 +173,8 @@
   const jitter = a => (Math.random() * 2 - 1) * a;
   $('add').href = `https://github.com/${REPO}/upload/${BRANCH}/cartes`;
 
-  let cards = [], z = 1;
+  const allBtn = $('all');
+  let cards = [], z = 1, busy = false;
 
   function place(el, { x = 0, y = 0, r = 0, s = 1, t = 600 } = {}) {
     el.style.setProperty('--x', x);
@@ -197,10 +213,19 @@
       : 'Aucune carte pour l’instant. Ajoute des images dans le dossier « cartes ».';
   }
 
+  // Retour à l'accueil : toutes les cartes face visible, à leur place.
+  function showAll() {
+    if (busy) return;
+    cards.forEach((c, k) => { c.className = 'card up'; c.style.zIndex = k; toSlot(c, k, 500); });
+    if (cards.length >= 2) statusEl.textContent = 'Les cartes possibles.';
+    btn.textContent = 'Lancer le tirage';
+    allBtn.hidden = true;
+  }
+
   async function draw() {
     btn.disabled = true;
-    cards.forEach((c, k) => { c.className = 'card up'; c.style.zIndex = k; toSlot(c, k, 500); });
-    statusEl.textContent = 'Les cartes possibles.';
+    showAll();
+    busy = true;
     await wait(1200);
 
     for (const c of cards) { c.classList.remove('up'); await wait(160); }
@@ -254,8 +279,12 @@
     statusEl.textContent = 'Carte tirée !';
     btn.textContent = 'Nouveau tirage';
     btn.disabled = false;
+    allBtn.hidden = false;
+    busy = false;
   }
   btn.addEventListener('click', draw);
+  allBtn.addEventListener('click', showAll);
+  $('home').addEventListener('click', e => { e.preventDefault(); showAll(); });
 
   // ponytail: API GitHub sans jeton = 60 lectures/heure par connexion, largement assez pour un jeu entre amis.
   fetch(`https://api.github.com/repos/${REPO}/contents/cartes?ref=${BRANCH}`, { cache: 'no-store' })
