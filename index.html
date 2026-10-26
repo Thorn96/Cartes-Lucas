@@ -117,16 +117,7 @@
   .btn:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.08); }
   .btn:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 2px 0 #7a5306; }
   .btn:disabled { filter: grayscale(.6) brightness(.7); cursor: default; }
-  .btn:focus-visible, .add:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
-  .add {
-    position: fixed; z-index: 5;
-    top: calc(12px + env(safe-area-inset-top, 0px));
-    right: max(12px, env(safe-area-inset-right, 0px));
-    color: var(--ink); background: var(--panel);
-    border: 1.5px solid var(--muted); border-radius: 999px;
-    padding: 8px 16px; font-weight: 800; text-decoration: none;
-  }
-  .add:hover { border-color: var(--gold); color: var(--gold); }
+  .btn:focus-visible, .links a:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
   h1 a { color: inherit; text-decoration: none; }
   h1 a:focus-visible { outline: 3px solid #fff; outline-offset: 4px; border-radius: 8px; }
   .actions { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 12px; }
@@ -139,42 +130,69 @@
   .ghost:hover { border-color: var(--gold); color: var(--gold); }
   .ghost:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
   [hidden] { display: none !important; }
-  .help { margin-top: 8px; color: var(--muted); font-weight: 800; }
-  .help:hover { color: var(--gold); }
+  .links { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 20px; margin-top: 8px; }
+  .links a { color: var(--muted); font-weight: 800; }
+  .links a:hover { color: var(--gold); }
+  /* Deck : à l'accueil, on clique une carte pour la sortir du tirage. */
+  .stage.rest .card { cursor: pointer; }
+  .stage.rest .card:not(.off):hover .face { box-shadow: 0 0 0 2px var(--gold), 0 10px 28px #0009; }
+  .card:focus-visible { outline: 3px solid #fff; outline-offset: 4px; border-radius: 8px; }
+  .card.off { opacity: .3; filter: grayscale(1); }
+  .card.gone { opacity: 0; pointer-events: none; }
+  .deckbar { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px 16px; font-weight: 800; }
+  .link {
+    background: none; border: 0; padding: 4px 2px; cursor: pointer;
+    font: inherit; color: var(--gold); text-decoration: underline; text-underline-offset: 3px;
+  }
+  .link:focus-visible { outline: 3px solid #fff; outline-offset: 2px; border-radius: 4px; }
 </style>
 </head>
 <body>
 
-<a class="add" id="add" href="#" target="_blank" rel="noopener">Ajouter des cartes</a>
 
 <main>
   <h1><a id="home" href="./">BrandQuest Cards</a></h1>
   <p class="sub"><b>Bonus</b> <i>Malus</i></p>
   <div class="stage" id="stage"></div>
   <p class="status" id="status" aria-live="polite">Chargement des cartes…</p>
+  <div class="deckbar" id="deckbar" hidden>
+    <span id="count"></span>
+    <button class="link" id="pickAll" type="button">Tout prendre</button>
+    <button class="link" id="pickNone" type="button">Tout retirer</button>
+  </div>
   <div class="actions">
     <button class="btn" id="go" type="button" disabled>Lancer le tirage</button>
     <button class="ghost" id="all" type="button" hidden>Voir toutes les cartes</button>
   </div>
-  <a class="help" href="tuto.html">Comment ajouter des cartes ?</a>
+  <nav class="links">
+    <a id="addBonus" href="#" target="_blank" rel="noopener">Ajouter un bonus</a>
+    <a id="addMalus" href="#" target="_blank" rel="noopener">Ajouter un malus</a>
+    <a href="tuto.html">Mode d’emploi</a>
+  </nav>
 </main>
 
 <script>
-  // Les cartes = toutes les images du dossier "cartes" du dépôt GitHub.
+  // Les cartes = les images du dossier "cartes" du dépôt GitHub ; leur sous-dossier (bonus/ ou malus/) donne leur type.
   const REPO = 'Thorn96/Cartes-Lucas', BRANCH = 'main';
   const IMG = /\.(png|jpe?g|webp|gif)$/i;
   const SLOT = 1.15; // écart entre cartes, en largeurs de carte
+  const ROW = 1.1;   // écart entre rangées, en hauteurs de carte
+  const KEY = 'bq-cartes-retirees'; // le deck est gardé dans ce navigateur
 
   const $ = id => document.getElementById(id);
-  const stage = $('stage'), statusEl = $('status'), btn = $('go');
+  const stage = $('stage'), statusEl = $('status'), btn = $('go'), allBtn = $('all'), deckbar = $('deckbar');
   const speed = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0.3 : 1;
   const wait = ms => new Promise(r => setTimeout(r, ms * speed));
   const rand = n => crypto.getRandomValues(new Uint32Array(1))[0] % n;
   const jitter = a => (Math.random() * 2 - 1) * a;
-  $('add').href = `https://github.com/${REPO}/upload/${BRANCH}/cartes`;
+  for (const t of ['bonus', 'malus'])
+    $('add' + t[0].toUpperCase() + t.slice(1)).href = `https://github.com/${REPO}/upload/${BRANCH}/cartes/${t}`;
 
-  const allBtn = $('all');
-  let cards = [], z = 1, busy = false;
+  // all = toutes les cartes du dossier ; cards = celles sur la table pendant un tirage.
+  let all = [], cards = [], z = 1, busy = false, atRest = false, cols = 1, rows = 1;
+  const out = new Set((() => { try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch { return []; } })());
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify([...out])); } catch {} };
+  const deck = () => all.filter(c => !out.has(c.dataset.key));
 
   function place(el, { x = 0, y = 0, r = 0, s = 1, t = 600 } = {}) {
     el.style.setProperty('--x', x);
@@ -183,7 +201,21 @@
     el.style.setProperty('--s', s);
     el.style.setProperty('--t', t * speed + 'ms');
   }
-  const toSlot = (el, k, t) => place(el, { x: (k - (cards.length - 1) / 2) * SLOT, t });
+
+  // Grille en rangées équilibrées : 3 cartes max par rangée sur téléphone, 6 sur ordinateur.
+  function layout(n) {
+    n = Math.max(n, 1);
+    rows = Math.ceil(n / (innerWidth < 600 ? 3 : 6));
+    cols = Math.ceil(n / rows);
+    const tall = Math.max(rows * ROW + .3, 1.9);
+    document.documentElement.style.setProperty('--cw',
+      `min(${(88 / (Math.max(cols, 3) * SLOT)).toFixed(2)}vw, max(${(62 / (tall * 1.713)).toFixed(2)}vh, 60px), 170px)`);
+    stage.style.height = `calc(var(--cw) * 1.713 * ${tall})`;
+  }
+  function toSlot(el, k, t) {
+    const r = Math.floor(k / cols), inRow = Math.min(cols, cards.length - r * cols);
+    place(el, { x: (k % cols - (inRow - 1) / 2) * SLOT, y: (r - (rows - 1) / 2) * ROW, t });
+  }
 
   function img(cls, src, alt) {
     const i = document.createElement('img');
@@ -191,44 +223,86 @@
     return i;
   }
 
-  // Au repos : toutes les cartes possibles, face visible.
   function buildTable(list) {
-    // ponytail: une seule rangée, les cartes rapetissent au-delà de ~6 ; passer sur 2 rangées si le jeu grossit.
-    const n = list.length;
-    document.documentElement.style.setProperty('--cw', `min(${(88 / (Math.max(n, 3) * SLOT)).toFixed(2)}vw, 170px)`);
-    cards = list.map(card => {
+    all = list.map(card => {
       const el = document.createElement('div');
-      el.className = 'card up';
+      el.dataset.key = card.key;
+      el.dataset.type = card.type;
+      el.setAttribute('role', 'button');
+      el.addEventListener('click', () => toggle(el));
+      el.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(el); }
+      });
       const flip = document.createElement('div');
       flip.className = 'flip';
       flip.append(img('face back', 'verso.webp', 'Verso BrandQuest'), img('face front', card.src, card.name));
       el.append(flip);
       return el;
     });
-    stage.replaceChildren(...cards);
-    cards.forEach((c, k) => toSlot(c, k, 0));
-    btn.disabled = n < 2;
-    statusEl.textContent = n >= 2 ? 'Les cartes possibles.'
-      : n === 1 ? 'Ajoute au moins une autre carte pour lancer un tirage.'
-      : 'Aucune carte pour l’instant. Ajoute des images dans le dossier « cartes ».';
+    stage.replaceChildren(...all);
+    showAll(0);
   }
 
-  // Retour à l'accueil : toutes les cartes face visible, à leur place.
-  function showAll() {
+  // Accueil : toutes les cartes face visible ; celles hors du deck sont grisées.
+  function showAll(t = 500) {
     if (busy) return;
-    cards.forEach((c, k) => { c.className = 'card up'; c.style.zIndex = k; toSlot(c, k, 500); });
-    if (cards.length >= 2) statusEl.textContent = 'Les cartes possibles.';
+    cards = all;
+    layout(all.length);
+    all.forEach((c, k) => {
+      c.className = 'card up' + (out.has(c.dataset.key) ? ' off' : '');
+      c.style.zIndex = k;
+      c.tabIndex = 0;
+      c.setAttribute('aria-pressed', !out.has(c.dataset.key));
+      toSlot(c, k, t);
+    });
+    atRest = true;
+    stage.classList.add('rest');
     btn.textContent = 'Lancer le tirage';
     allBtn.hidden = true;
+    refresh();
   }
 
+  function refresh() {
+    const inDeck = deck(), d = inDeck.length, n = all.length;
+    const of = t => inDeck.filter(c => c.dataset.type === t).length;
+    const other = d - of('bonus') - of('malus');
+    btn.disabled = d < 2;
+    deckbar.hidden = n < 2;
+    $('count').textContent = `Deck : ${d} / ${n} cartes · ${of('bonus')} bonus · ${of('malus')} malus`
+      + (other ? ` · ${other} sans type` : '');
+    statusEl.textContent = n === 0 ? 'Aucune carte pour l’instant. Ajoute des images dans le dossier « cartes ».'
+      : n === 1 ? 'Ajoute au moins une autre carte pour lancer un tirage.'
+      : d < 2 ? 'Garde au moins 2 cartes dans le deck pour lancer un tirage.'
+      : 'Clique sur une carte pour la retirer du deck ou l’y remettre.';
+  }
+
+  function setOut(el, off) {
+    off ? out.add(el.dataset.key) : out.delete(el.dataset.key);
+    el.classList.toggle('off', off);
+    el.setAttribute('aria-pressed', !off);
+  }
+  function toggle(el) {
+    if (!atRest) return;
+    setOut(el, !out.has(el.dataset.key));
+    save(); refresh();
+  }
+  $('pickAll').addEventListener('click', () => { if (atRest) { all.forEach(c => setOut(c, false)); save(); refresh(); } });
+  $('pickNone').addEventListener('click', () => { if (atRest) { all.forEach(c => setOut(c, true)); save(); refresh(); } });
+
   async function draw() {
-    btn.disabled = true;
-    showAll();
-    busy = true;
+    const d = deck();
+    if (d.length < 2) return;
+    busy = true; atRest = false;
+    btn.disabled = true; allBtn.hidden = true; deckbar.hidden = true;
+    stage.classList.remove('rest');
+    all.forEach(c => { c.tabIndex = -1; c.className = d.includes(c) ? 'card up' : 'card gone'; });
+    cards = d;
+    layout(d.length);
+    d.forEach((c, k) => { c.style.zIndex = k; toSlot(c, k, 500); });
+    statusEl.textContent = d.length === all.length ? 'Les cartes en jeu.' : `Les ${d.length} cartes du deck.`;
     await wait(1200);
 
-    for (const c of cards) { c.classList.remove('up'); await wait(160); }
+    for (const c of cards) { c.classList.remove('up'); await wait(Math.min(160, 1600 / cards.length)); }
     await wait(800);
 
     statusEl.textContent = 'Mélange…';
@@ -256,22 +330,22 @@
     statusEl.textContent = 'Tirage…';
     const picked = rand(cards.length);
     const steps = 2 * cards.length + picked + 1;
-    let delay = 90;
+    let delay = 90 * Math.min(1, 6 / cards.length);
     for (let i = 0; i < steps; i++) {
       cards.forEach(c => c.classList.remove('hot'));
       cards[order[i % cards.length]].classList.add('hot');
       await wait(delay);
-      delay *= 1.18;
+      delay *= 1 + .18 * Math.min(1, 6 / cards.length);
     }
     await wait(250);
 
     const won = cards[order[picked]];
     won.classList.remove('hot');
     won.style.zIndex = ++z;
-    cards.forEach(c => c !== won && (c.classList.add('dim'), place(c, {
-      x: parseFloat(c.style.getPropertyValue('--x')) * 1.1, y: .32, s: .75, t: 800,
-    })));
-    place(won, { s: 1.75, t: 900 });
+    const at = (c, p) => parseFloat(c.style.getPropertyValue(p));
+    cards.forEach(c => c !== won && (c.classList.add('dim'), place(c, { x: at(c, '--x'), y: at(c, '--y'), s: .85, t: 800 })));
+    const s = Math.min(stage.clientHeight * .92 / won.offsetHeight, stage.clientWidth * .9 / won.offsetWidth, 520 / won.offsetHeight);
+    place(won, { s, t: 900 });
     await wait(700);
     won.classList.add('up', 'won');
     await wait(800);
@@ -283,15 +357,24 @@
     busy = false;
   }
   btn.addEventListener('click', draw);
-  allBtn.addEventListener('click', showAll);
+  allBtn.addEventListener('click', () => showAll());
   $('home').addEventListener('click', e => { e.preventDefault(); showAll(); });
+  addEventListener('resize', () => { if (atRest) showAll(0); }); // la grille suit la largeur de l'écran
 
   // ponytail: API GitHub sans jeton = 60 lectures/heure par connexion, largement assez pour un jeu entre amis.
-  fetch(`https://api.github.com/repos/${REPO}/contents/cartes?ref=${BRANCH}`, { cache: 'no-store' })
+  fetch(`https://api.github.com/repos/${REPO}/git/trees/${BRANCH}?recursive=1`, { cache: 'no-store' })
     .then(r => r.ok ? r.json() : Promise.reject(r.status))
-    .then(files => buildTable(files
-      .filter(f => f.type === 'file' && IMG.test(f.name))
-      .map(f => ({ name: f.name.replace(IMG, ''), src: f.download_url }))))
+    .then(({ tree }) => buildTable(tree
+      .filter(f => f.type === 'blob' && f.path.startsWith('cartes/') && IMG.test(f.path))
+      .map(f => {
+        const parts = f.path.split('/'), type = parts.length > 2 ? parts[1].toLowerCase() : '';
+        return {
+          key: f.path,
+          type: type === 'bonus' || type === 'malus' ? type : '',
+          name: parts.at(-1).replace(IMG, ''),
+          src: `https://raw.githubusercontent.com/${REPO}/${BRANCH}/${f.path.split('/').map(encodeURIComponent).join('/')}`,
+        };
+      })))
     .catch(() => { statusEl.textContent = 'Impossible de charger les cartes. Recharge la page dans quelques minutes.'; });
 </script>
 </body>

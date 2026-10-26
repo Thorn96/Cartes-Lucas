@@ -94,7 +94,7 @@
 <main>
   <a class="back" href="./">← Retour au tirage</a>
   <h1>Ajouter tes propres cartes</h1>
-  <p class="lead">Les cartes du tirage sont des images rangées dans un dossier sur GitHub. Une fois ton compte créé et l’invitation acceptée (à faire une seule fois), ajouter une carte prend 30 secondes.</p>
+  <p class="lead">Les cartes du tirage sont des images rangées sur GitHub, dans le dossier <code>cartes/bonus</code> ou <code>cartes/malus</code> selon leur type. Une fois ton compte créé et l’invitation acceptée (à faire une seule fois), ajouter une carte prend 30 secondes.</p>
 
   <h2>Une seule fois : ton accès</h2>
   <ol class="steps">
@@ -139,7 +139,8 @@
     </div></li>
     <li><div class="step">
       <h3>Ouvre la page d’ajout</h3>
-      <p>Sur le tirage, clique sur <b class="ui">Ajouter des cartes</b> en haut à droite. La page GitHub d’envoi s’ouvre directement dans le dossier <code>cartes</code>.</p>
+      <p>En bas de la page du tirage, clique sur <b class="ui">Ajouter un bonus</b> ou <b class="ui">Ajouter un malus</b> selon la carte. La page GitHub d’envoi s’ouvre directement dans le bon dossier.</p>
+      <p class="tip">C’est le dossier qui dit si une carte est un bonus ou un malus. Une image mise directement dans <code>cartes</code> est tirée aussi, mais comptée « sans type ».</p>
       <p>Si GitHub te demande de te connecter, fais-le avec ton compte.</p>
     </div></li>
     <li><div class="step">
@@ -156,16 +157,30 @@
     </div></li>
   </ol>
 
-  <h2>Retirer ou renommer une carte</h2>
+  <h2>Tirer seulement certaines cartes (le deck)</h2>
+  <ol class="steps">
+    <li><div class="step">
+      <h3>Choisis les cartes du deck</h3>
+      <p>Sur la page du tirage, avant de lancer, clique sur une carte pour la retirer du deck : elle devient grise et ne sortira pas. Clique à nouveau pour la remettre.</p>
+      <p>Pour tirer sur 5 cartes parmi 20 : clique sur <b class="ui">Tout retirer</b>, puis sur les 5 cartes voulues. Le compteur affiche par exemple « Deck : 5 / 20 cartes · 3 bonus · 2 malus ».</p>
+    </div></li>
+    <li><div class="step">
+      <h3>Lance le tirage</h3>
+      <p>Seules les cartes du deck sont mélangées, et chacune a la même chance de sortir. Il faut au moins 2 cartes dans le deck.</p>
+      <p class="tip">Le deck est gardé dans ton navigateur : il est toujours là quand tu reviens, mais il n’est pas partagé avec les autres appareils. Les nouvelles cartes ajoutées au dossier entrent dans le deck d’office.</p>
+    </div></li>
+  </ol>
+
+  <h2>Retirer, renommer ou changer le type d’une carte</h2>
   <ol class="steps">
     <li><div class="step">
       <h3>Ouvre le dossier des cartes</h3>
-      <p><a href="https://github.com/Thorn96/Cartes-Lucas/tree/main/cartes" target="_blank" rel="noopener">github.com/Thorn96/Cartes-Lucas/tree/main/cartes</a>, puis clique sur l’image à retirer.</p>
+      <p><a href="https://github.com/Thorn96/Cartes-Lucas/tree/main/cartes" target="_blank" rel="noopener">github.com/Thorn96/Cartes-Lucas/tree/main/cartes</a>, ouvre le dossier <code>bonus</code> ou <code>malus</code>, puis clique sur l’image à retirer.</p>
     </div></li>
     <li><div class="step">
       <h3>Supprime-la</h3>
       <p>Clique sur le menu <b class="ui">⋯</b> en haut à droite de l’image, puis <b class="ui">Delete file</b>, puis <b class="ui">Commit changes</b>.</p>
-      <p class="tip">Pour renommer une carte : supprime-la, puis renvoie l’image avec le bon nom de fichier.</p>
+      <p class="tip">Pour renommer une carte ou la passer de bonus à malus : supprime-la, puis renvoie l’image avec le bon nom, dans le bon dossier.</p>
     </div></li>
   </ol>
 
@@ -177,7 +192,7 @@
     </div>
     <div>
       <dt>Ma carte n’apparaît pas.</dt>
-      <dd>Attends une ou deux minutes, puis recharge avec Ctrl + F5. Vérifie aussi que le fichier est bien dans le dossier <code>cartes</code> et pas à côté.</dd>
+      <dd>Attends une ou deux minutes, puis recharge avec Ctrl + F5. Vérifie aussi que le fichier est bien dans <code>cartes/bonus</code> ou <code>cartes/malus</code>.</dd>
     </div>
     <div>
       <dt>Le tirage affiche « Impossible de charger les cartes ».</dt>
@@ -185,7 +200,7 @@
     </div>
     <div>
       <dt>Le bouton « Lancer le tirage » est grisé.</dt>
-      <dd>Il faut au moins deux cartes dans le dossier.</dd>
+      <dd>Il faut au moins deux cartes dans le deck.</dd>
     </div>
   </dl>
 </main>
