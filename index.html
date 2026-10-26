@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tirage BrandQuest</title>
+<link rel="icon" href="verso.webp">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@600;800&display=swap">
+<style>
+  /* Une scène : titre, table de cartes, un bouton. Univers galaxie du verso, liseré or. */
+  :root {
+    --night: #0b1033;
+    --nebula: #2a2f86;
+    --violet: #6b4bb8;
+    --gold: #f3c21b;
+    --gold-deep: #c98d0a;
+    --ink: #eef0ff;
+    --muted: #a9b0e6;
+    --panel: #141a4bcc;
+    --display: "Lilita One", "Arial Rounded MT Bold", system-ui, sans-serif;
+    --body: "Nunito", system-ui, sans-serif;
+    --cw: min(25vw, 170px);
+    color-scheme: dark;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background:
+      radial-gradient(1px 1px at 12% 18%, #fff8 50%, transparent),
+      radial-gradient(1px 1px at 78% 12%, #fff9 50%, transparent),
+      radial-gradient(1.5px 1.5px at 64% 72%, #fff7 50%, transparent),
+      radial-gradient(1px 1px at 28% 84%, #fff6 50%, transparent),
+      radial-gradient(1.5px 1.5px at 90% 48%, #fff8 50%, transparent),
+      radial-gradient(60% 50% at 50% 45%, var(--nebula), transparent 70%),
+      radial-gradient(40% 35% at 20% 80%, #6b4bb855, transparent 70%),
+      var(--night);
+    background-attachment: fixed;
+    color: var(--ink);
+    font: 600 15px/1.4 var(--body);
+    overflow-x: hidden;
+  }
+  main {
+    min-height: 100%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 12px;
+    padding-block: 24px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    text-align: center;
+  }
+  h1 {
+    margin: 0;
+    font: 400 clamp(2.4rem, 8vw, 4rem)/1 var(--display);
+    color: var(--gold);
+    text-shadow: 0 3px 0 var(--violet), 0 6px 18px #0008;
+    letter-spacing: .01em;
+  }
+  .sub {
+    margin: 0;
+    font: 400 clamp(1rem, 3.4vw, 1.3rem)/1.2 var(--display);
+    letter-spacing: .08em; text-transform: uppercase;
+  }
+  .sub b { color: #fff; } .sub i { font-style: normal; color: #ff4d4d; }
+
+  .stage {
+    position: relative;
+    width: 100%; max-width: 900px;
+    height: calc(var(--cw) * 1.713 * 1.9);
+    perspective: 1400px;
+  }
+  .card {
+    --x: 0; --y: 0; --r: 0deg; --s: 1; --t: 600ms;
+    position: absolute; left: 50%; top: 50%;
+    width: var(--cw); aspect-ratio: 827 / 1417; max-width: 100%;
+    transform: translate(-50%, -50%)
+               translate(calc(var(--x) * var(--cw)), calc(var(--y) * var(--cw) * 1.713))
+               rotate(var(--r)) scale(var(--s));
+    transition: transform var(--t) cubic-bezier(.2, .8, .2, 1), opacity .6s, filter .6s;
+  }
+  .card.dim { opacity: .25; filter: saturate(.4); }
+  .flip {
+    position: relative; width: 100%; height: 100%;
+    transform-style: preserve-3d;
+    transition: transform .75s cubic-bezier(.3, 1.3, .5, 1);
+  }
+  .card.up .flip { transform: rotateY(180deg); }
+  .face {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    border-radius: 6%/3.5%;
+    backface-visibility: hidden;
+    box-shadow: 0 10px 28px #0009;
+    object-fit: cover;
+    background: var(--nebula);
+  }
+  .front { transform: rotateY(180deg); }
+  .card.hot .face { box-shadow: 0 0 0 3px var(--gold), 0 0 28px var(--gold); }
+  .card.won .face { animation: glow 1.8s ease-in-out infinite; }
+  @keyframes glow {
+    50% { box-shadow: 0 0 0 3px var(--gold), 0 0 48px 6px var(--gold-deep); }
+  }
+
+  .status { margin: 0; min-height: 1.5em; color: var(--muted); }
+  .btn {
+    font: 400 1.25rem/1 var(--display); letter-spacing: .04em;
+    color: var(--night);
+    background: linear-gradient(var(--gold), var(--gold-deep));
+    border: 0; border-radius: 999px;
+    padding: 14px 32px;
+    box-shadow: 0 4px 0 #7a5306, 0 8px 20px #0007;
+    cursor: pointer;
+    transition: transform .15s, filter .15s;
+  }
+  .btn:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.08); }
+  .btn:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 2px 0 #7a5306; }
+  .btn:disabled { filter: grayscale(.6) brightness(.7); cursor: default; }
+  .btn:focus-visible, .add:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+  .add {
+    position: fixed; z-index: 5;
+    top: calc(12px + env(safe-area-inset-top, 0px));
+    right: max(12px, env(safe-area-inset-right, 0px));
+    color: var(--ink); background: var(--panel);
+    border: 1.5px solid var(--muted); border-radius: 999px;
+    padding: 8px 16px; font-weight: 800; text-decoration: none;
+  }
+  .add:hover { border-color: var(--gold); color: var(--gold); }
+</style>
+</head>
+<body>
+
+<a class="add" id="add" href="#" target="_blank" rel="noopener">Ajouter des cartes</a>
+
+<main>
+  <h1>BrandQuest</h1>
+  <p class="sub"><b>Bonus</b> <i>Malus</i></p>
+  <div class="stage" id="stage"></div>
+  <p class="status" id="status" aria-live="polite">Chargement des cartes…</p>
+  <button class="btn" id="go" type="button" disabled>Lancer le tirage</button>
+</main>
+
+<script>
+  // Les cartes = toutes les images du dossier "cartes" du dépôt GitHub.
+  const REPO = 'Thorn96/Cartes-Lucas', BRANCH = 'main';
+  const IMG = /\.(png|jpe?g|webp|gif)$/i;
+  const SLOT = 1.15; // écart entre cartes, en largeurs de carte
+
+  const $ = id => document.getElementById(id);
+  const stage = $('stage'), statusEl = $('status'), btn = $('go');
+  const speed = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0.3 : 1;
+  const wait = ms => new Promise(r => setTimeout(r, ms * speed));
+  const rand = n => crypto.getRandomValues(new Uint32Array(1))[0] % n;
+  const jitter = a => (Math.random() * 2 - 1) * a;
+  $('add').href = `https://github.com/${REPO}/upload/${BRANCH}/cartes`;
+
+  let cards = [], z = 1;
+
+  function place(el, { x = 0, y = 0, r = 0, s = 1, t = 600 } = {}) {
+    el.style.setProperty('--x', x);
+    el.style.setProperty('--y', y);
+    el.style.setProperty('--r', r + 'deg');
+    el.style.setProperty('--s', s);
+    el.style.setProperty('--t', t * speed + 'ms');
+  }
+  const toSlot = (el, k, t) => place(el, { x: (k - (cards.length - 1) / 2) * SLOT, t });
+
+  function img(cls, src, alt) {
+    const i = document.createElement('img');
+    i.className = cls; i.src = src; i.alt = alt;
+    return i;
+  }
+
+  // Au repos : toutes les cartes possibles, face visible.
+  function buildTable(list) {
+    // ponytail: une seule rangée, les cartes rapetissent au-delà de ~6 ; passer sur 2 rangées si le jeu grossit.
+    const n = list.length;
+    document.documentElement.style.setProperty('--cw', `min(${(88 / (Math.max(n, 3) * SLOT)).toFixed(2)}vw, 170px)`);
+    cards = list.map(card => {
+      const el = document.createElement('div');
+      el.className = 'card up';
+      const flip = document.createElement('div');
+      flip.className = 'flip';
+      flip.append(img('face back', 'verso.webp', 'Verso BrandQuest'), img('face front', card.src, card.name));
+      el.append(flip);
+      return el;
+    });
+    stage.replaceChildren(...cards);
+    cards.forEach((c, k) => toSlot(c, k, 0));
+    btn.disabled = n < 2;
+    statusEl.textContent = n >= 2 ? 'Les cartes possibles.'
+      : n === 1 ? 'Ajoute au moins une autre carte pour lancer un tirage.'
+      : 'Aucune carte pour l’instant. Ajoute des images dans le dossier « cartes ».';
+  }
+
+  async function draw() {
+    btn.disabled = true;
+    cards.forEach((c, k) => { c.className = 'card up'; c.style.zIndex = k; toSlot(c, k, 500); });
+    statusEl.textContent = 'Les cartes possibles.';
+    await wait(1200);
+
+    for (const c of cards) { c.classList.remove('up'); await wait(160); }
+    await wait(800);
+
+    statusEl.textContent = 'Mélange…';
+    cards.forEach(c => place(c, { x: jitter(.04), r: jitter(5), t: 500 }));
+    await wait(550);
+    for (let i = 0; i < 8; i++) {
+      const c = cards[rand(cards.length)];
+      const side = i % 2 ? 1 : -1;
+      place(c, { x: side * .8, y: -.06, r: side * 14, t: 200 });
+      await wait(210);
+      c.style.zIndex = ++z;
+      place(c, { x: jitter(.04), r: jitter(5), t: 200 });
+      await wait(220);
+    }
+
+    // Ordre final aléatoire (Fisher-Yates), puis on étale.
+    const order = cards.map((_, k) => k);
+    for (let k = order.length - 1; k > 0; k--) {
+      const j = rand(k + 1);
+      [order[k], order[j]] = [order[j], order[k]];
+    }
+    order.forEach((ci, k) => toSlot(cards[ci], k, 650));
+    await wait(800);
+
+    statusEl.textContent = 'Tirage…';
+    const picked = rand(cards.length);
+    const steps = 2 * cards.length + picked + 1;
+    let delay = 90;
+    for (let i = 0; i < steps; i++) {
+      cards.forEach(c => c.classList.remove('hot'));
+      cards[order[i % cards.length]].classList.add('hot');
+      await wait(delay);
+      delay *= 1.18;
+    }
+    await wait(250);
+
+    const won = cards[order[picked]];
+    won.classList.remove('hot');
+    won.style.zIndex = ++z;
+    cards.forEach(c => c !== won && (c.classList.add('dim'), place(c, {
+      x: parseFloat(c.style.getPropertyValue('--x')) * 1.1, y: .32, s: .75, t: 800,
+    })));
+    place(won, { s: 1.75, t: 900 });
+    await wait(700);
+    won.classList.add('up', 'won');
+    await wait(800);
+
+    statusEl.textContent = 'Carte tirée !';
+    btn.textContent = 'Nouveau tirage';
+    btn.disabled = false;
+  }
+  btn.addEventListener('click', draw);
+
+  // ponytail: API GitHub sans jeton = 60 lectures/heure par connexion, largement assez pour un jeu entre amis.
+  fetch(`https://api.github.com/repos/${REPO}/contents/cartes?ref=${BRANCH}`, { cache: 'no-store' })
+    .then(r => r.ok ? r.json() : Promise.reject(r.status))
+    .then(files => buildTable(files
+      .filter(f => f.type === 'file' && IMG.test(f.name))
+      .map(f => ({ name: f.name.replace(IMG, ''), src: f.download_url }))))
+    .catch(() => { statusEl.textContent = 'Impossible de charger les cartes. Recharge la page dans quelques minutes.'; });
+</script>
+</body>
+</html>
