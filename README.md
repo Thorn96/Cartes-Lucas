@@ -2,6 +2,8 @@
 
 Le site : https://thorn96.github.io/Cartes-Lucas/
 
+Tuto complet, de la création du compte GitHub à l'ajout de cartes : https://thorn96.github.io/Cartes-Lucas/tuto.html
+
 ## Ajouter une carte
 
 1. Sur le site, clique sur **Ajouter des cartes** (ou ouvre le dossier [`cartes`](cartes) ici et clique sur **Add file → Upload files**).

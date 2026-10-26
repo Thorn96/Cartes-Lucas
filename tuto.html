@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ajouter des cartes</title>
+<link rel="icon" href="verso.webp">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@600;800&display=swap">
+<style>
+  /* Une colonne de lecture, étapes numérotées (c'est un vrai parcours), mêmes couleurs que le tirage. */
+  :root {
+    --night: #0b1033;
+    --nebula: #2a2f86;
+    --violet: #6b4bb8;
+    --gold: #f3c21b;
+    --ink: #eef0ff;
+    --muted: #a9b0e6;
+    --panel: #141a4bcc;
+    --display: "Lilita One", "Arial Rounded MT Bold", system-ui, sans-serif;
+    --body: "Nunito", system-ui, sans-serif;
+    color-scheme: dark;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background:
+      radial-gradient(60% 40% at 50% 0%, var(--nebula), transparent 70%),
+      var(--night);
+    background-attachment: fixed;
+    color: var(--ink);
+    font: 600 16px/1.6 var(--body);
+  }
+  main {
+    max-width: 700px; margin: 0 auto;
+    padding-block: 32px 64px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    display: flex; flex-direction: column; gap: 20px;
+  }
+  .back { color: var(--muted); font-weight: 800; text-decoration: none; }
+  .back:hover { color: var(--gold); }
+  h1 {
+    margin: 0;
+    font: 400 clamp(2rem, 7vw, 3rem)/1.05 var(--display);
+    color: var(--gold);
+    text-shadow: 0 3px 0 var(--violet);
+    text-wrap: balance;
+  }
+  .lead { margin: 0; color: var(--muted); max-width: 60ch; }
+  h2 {
+    margin: 12px 0 0;
+    font: 400 1.4rem/1.2 var(--display);
+    letter-spacing: .02em;
+  }
+  ol.steps { list-style: none; counter-reset: s; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+  ol.steps > li {
+    counter-increment: s;
+    display: grid; grid-template-columns: 40px 1fr; gap: 14px;
+    background: var(--panel);
+    border: 1px solid #a9b0e633; border-radius: 16px;
+    padding: 18px;
+  }
+  ol.steps > li::before {
+    content: counter(s);
+    width: 40px; height: 40px; border-radius: 50%;
+    display: grid; place-items: center;
+    background: var(--gold); color: var(--night);
+    font: 400 1.3rem/1 var(--display);
+  }
+  .step { min-width: 0; }
+  .step h3 { margin: 6px 0 6px; font-size: 1.15rem; font-weight: 800; }
+  .step p, .step ul { margin: 0 0 8px; }
+  .step ul { padding-left: 1.2em; }
+  .step li { margin-bottom: 4px; }
+  a { color: var(--gold); overflow-wrap: anywhere; }
+  b.ui {
+    font-weight: 800; white-space: nowrap;
+    background: #ffffff14; border: 1px solid #ffffff2a; border-radius: 6px;
+    padding: 0 6px;
+  }
+  code { font-size: .95em; background: #ffffff14; border-radius: 4px; padding: 0 4px; overflow-wrap: anywhere; }
+  .tip {
+    margin: 4px 0 0; padding: 10px 14px;
+    border-left: 3px solid var(--gold); border-radius: 0 10px 10px 0;
+    background: #f3c21b14; color: var(--ink);
+  }
+  dl { margin: 0; display: flex; flex-direction: column; gap: 12px; }
+  dt { font-weight: 800; }
+  dd { margin: 2px 0 0; color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="./">← Retour au tirage</a>
+  <h1>Ajouter tes propres cartes</h1>
+  <p class="lead">Les cartes du tirage sont des images rangées dans un dossier sur GitHub. Une fois ton compte créé et l’invitation acceptée (à faire une seule fois), ajouter une carte prend 30 secondes.</p>
+
+  <h2>Une seule fois : ton accès</h2>
+  <ol class="steps">
+    <li><div class="step">
+      <h3>Crée ton compte GitHub (gratuit)</h3>
+      <ul>
+        <li>Va sur <a href="https://github.com/signup" target="_blank" rel="noopener">github.com/signup</a>.</li>
+        <li>Entre ton adresse e-mail, choisis un mot de passe et un nom d’utilisateur, puis valide la petite vérification anti-robot.</li>
+        <li>GitHub t’envoie un code par e-mail : recopie-le pour activer le compte.</li>
+        <li>S’il te pose des questions sur ton usage ou te propose une offre payante, passe : le compte gratuit suffit.</li>
+      </ul>
+    </div></li>
+    <li><div class="step">
+      <h3>Envoie ton nom d’utilisateur à Leonard</h3>
+      <p>C’est le nom choisi à l’étape 1 (pas ton e-mail). Leonard t’ajoute alors au projet <b>Cartes-Lucas</b>.</p>
+    </div></li>
+    <li><div class="step">
+      <h3>Accepte l’invitation</h3>
+      <ul>
+        <li>Tu reçois un e-mail de GitHub : « Thorn96 invited you to collaborate ».</li>
+        <li>Clique sur <b class="ui">View invitation</b>, puis sur <b class="ui">Accept invitation</b>.</li>
+        <li>Pas d’e-mail ? Ouvre directement <a href="https://github.com/Thorn96/Cartes-Lucas/invitations" target="_blank" rel="noopener">github.com/Thorn96/Cartes-Lucas/invitations</a> en étant connecté.</li>
+      </ul>
+      <p class="tip">L’invitation expire au bout de 7 jours. Passé ce délai, demande à Leonard de la renvoyer.</p>
+    </div></li>
+    <li><div class="step">
+      <h3>Mets le tirage en favori</h3>
+      <p><a href="https://thorn96.github.io/Cartes-Lucas/">thorn96.github.io/Cartes-Lucas</a> : c’est la page du tirage et elle ne change jamais d’adresse.</p>
+    </div></li>
+  </ol>
+
+  <h2>À chaque nouvelle carte</h2>
+  <ol class="steps">
+    <li><div class="step">
+      <h3>Prépare l’image</h3>
+      <ul>
+        <li>Le recto de la carte, en <b>PNG, JPEG, WebP ou GIF</b>, moins de 25 Mo.</li>
+        <li>Au même format que les autres cartes, en hauteur (environ 827 × 1417 pixels), sinon elle sera recadrée.</li>
+        <li>Le nom du fichier devient le nom de la carte : par exemple <code>Malus - Budget gelé.png</code>.</li>
+      </ul>
+      <p class="tip">Pas besoin de faire le dos : il est commun à toutes les cartes.</p>
+    </div></li>
+    <li><div class="step">
+      <h3>Ouvre la page d’ajout</h3>
+      <p>Sur le tirage, clique sur <b class="ui">Ajouter des cartes</b> en haut à droite. La page GitHub d’envoi s’ouvre directement dans le dossier <code>cartes</code>.</p>
+      <p>Si GitHub te demande de te connecter, fais-le avec ton compte.</p>
+    </div></li>
+    <li><div class="step">
+      <h3>Glisse tes images</h3>
+      <p>Dépose une ou plusieurs images dans le grand cadre, ou clique sur <b class="ui">choose your files</b> pour les choisir.</p>
+    </div></li>
+    <li><div class="step">
+      <h3>Valide</h3>
+      <p>En bas de la page, laisse l’option <b class="ui">Commit directly to the main branch</b> cochée et clique sur le bouton vert <b class="ui">Commit changes</b>.</p>
+    </div></li>
+    <li><div class="step">
+      <h3>Recharge le tirage</h3>
+      <p>Attends environ une minute, puis recharge la page du tirage : ta carte apparaît avec les autres et entre dans le prochain tirage.</p>
+    </div></li>
+  </ol>
+
+  <h2>Retirer ou renommer une carte</h2>
+  <ol class="steps">
+    <li><div class="step">
+      <h3>Ouvre le dossier des cartes</h3>
+      <p><a href="https://github.com/Thorn96/Cartes-Lucas/tree/main/cartes" target="_blank" rel="noopener">github.com/Thorn96/Cartes-Lucas/tree/main/cartes</a>, puis clique sur l’image à retirer.</p>
+    </div></li>
+    <li><div class="step">
+      <h3>Supprime-la</h3>
+      <p>Clique sur le menu <b class="ui">⋯</b> en haut à droite de l’image, puis <b class="ui">Delete file</b>, puis <b class="ui">Commit changes</b>.</p>
+      <p class="tip">Pour renommer une carte : supprime-la, puis renvoie l’image avec le bon nom de fichier.</p>
+    </div></li>
+  </ol>
+
+  <h2>Si ça coince</h2>
+  <dl>
+    <div>
+      <dt>La page d’ajout affiche « 404 » ou pas de bouton pour envoyer.</dt>
+      <dd>Tu n’es pas connecté à GitHub, ou l’invitation n’est pas encore acceptée (étape 3).</dd>
+    </div>
+    <div>
+      <dt>Ma carte n’apparaît pas.</dt>
+      <dd>Attends une ou deux minutes, puis recharge avec Ctrl + F5. Vérifie aussi que le fichier est bien dans le dossier <code>cartes</code> et pas à côté.</dd>
+    </div>
+    <div>
+      <dt>Le tirage affiche « Impossible de charger les cartes ».</dt>
+      <dd>GitHub limite à 60 chargements par heure et par connexion internet. Réessaie un peu plus tard.</dd>
+    </div>
+    <div>
+      <dt>Le bouton « Lancer le tirage » est grisé.</dt>
+      <dd>Il faut au moins deux cartes dans le dossier.</dd>
+    </div>
+  </dl>
+</main>
+</body>
+</html>
