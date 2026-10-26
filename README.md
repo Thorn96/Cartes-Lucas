@@ -12,6 +12,8 @@ Tuto complet, de la création du compte GitHub à l'ajout de cartes : https://th
 
 La carte apparaît sur le site au prochain rechargement (compte une minute).
 
+Le type (bonus ou malus) vient du dossier. Sinon, il vient du nom du fichier s'il contient « bonus » ou « malus » (le dossier l'emporte en cas de désaccord).
+
 ## Retirer une carte
 
 Ouvre l'image dans [`cartes/bonus`](cartes/bonus) ou [`cartes/malus`](cartes/malus), clique sur **⋯ → Delete file**, puis **Commit changes**.

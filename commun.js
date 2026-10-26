@@ -3,7 +3,14 @@ const REPO = 'Thorn96/Cartes-Lucas', BRANCH = 'main';
 const IMG = /\.(png|jpe?g|webp|gif)$/i;
 const DECKS_KEY = 'bq-decks';
 
-// Les cartes = les images du dossier "cartes" du dépôt ; leur sous-dossier (bonus/ ou malus/) donne leur type.
+// Type d'une carte : son sous-dossier (bonus/ ou malus/), sinon son nom s'il contient « bonus » ou « malus » (pas les deux).
+function cardType(folder, name) {
+  if (folder === 'bonus' || folder === 'malus') return folder;
+  const b = /bonus/i.test(name), m = /malus/i.test(name);
+  return b === m ? '' : b ? 'bonus' : 'malus';
+}
+
+// Les cartes = les images du dossier "cartes" du dépôt.
 // ponytail: API GitHub sans jeton = 60 lectures/heure par connexion, largement assez pour un jeu entre amis.
 async function loadCards() {
   const r = await fetch(`https://api.github.com/repos/${REPO}/git/trees/${BRANCH}?recursive=1`, { cache: 'no-store' });
@@ -12,11 +19,11 @@ async function loadCards() {
   return tree
     .filter(f => f.type === 'blob' && f.path.startsWith('cartes/') && IMG.test(f.path))
     .map(f => {
-      const parts = f.path.split('/'), type = parts.length > 2 ? parts[1].toLowerCase() : '';
+      const parts = f.path.split('/'), name = parts.at(-1).replace(IMG, '');
       return {
         key: f.path,
-        type: type === 'bonus' || type === 'malus' ? type : '',
-        name: parts.at(-1).replace(IMG, ''),
+        type: cardType(parts.length > 2 ? parts[1].toLowerCase() : '', name),
+        name,
         src: `https://raw.githubusercontent.com/${REPO}/${BRANCH}/${parts.map(encodeURIComponent).join('/')}`,
       };
     });
